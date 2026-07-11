@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AAB — Paint Systems. AI Builds Them.</title>
+<meta name="author" content="Abhishek Choudhary">
+<meta name="description" content="AAB (Ascension for All and Beyond) — a paint program for systems. You paint actors, components, stores, gates and flows on a canvas; the AI and the verification-gated process (VGC) implement them. Grounded gamification: nothing glows verified without a named oracle.">
+<meta property="og:title" content="AAB — Paint Systems. AI Builds Them.">
+<meta property="og:description" content="A paint program for co-developing systems with AI, under a verification gate. Part of the Zistgah ecosystem.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;1,400&family=Spectral:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0a0e27; --navy2:#0c1030; --panel:#141a3a; --panel2:#0f1430;
+  --line:#28305a; --line2:#1e2547; --ink:#e7ebf7; --soft:#aeb8d8; --faint:#828cb2;
+  --gold:#d4a843; --gold2:#e6bd5c; --peri:#b9c6ea; --ox:#d1704a; --grn:#5bb89a;
+  --maxw:1060px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--navy);color:var(--ink);font-family:"Newsreader",Georgia,serif;font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 18px 4rem}
+header.top{max-width:var(--maxw);margin:0 auto;padding:2rem 18px .6rem}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 .7rem}
+h1{font-family:"Spectral",serif;font-weight:700;font-size:1.8rem;line-height:1.12;margin:.2rem 0 .2rem;color:#f2f4fb}
+h1 .aab{color:var(--gold)}
+h1 .sub{display:block;font-family:"Newsreader",serif;font-weight:400;font-style:italic;font-size:.98rem;color:var(--peri);margin-top:.45rem}
+.byline{font-size:.86rem;color:var(--soft);margin:.6rem 0 0}
+.byline b{color:var(--gold2)}
+a{color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(212,168,67,.3)}
+a:hover{color:var(--gold2)}
+h2{font-family:"Spectral",serif;font-weight:700;font-size:1.2rem;margin:2rem 0 .3rem;color:#f2f4fb;border-top:1px solid var(--line);padding-top:.8rem}
+p{margin:.6rem 0}
+.note{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.75rem 1rem;margin:.9rem 0;font-size:.86rem;color:var(--soft)}
+.note b{color:#eef1fb}
+
+/* ===== HUD ===== */
+#hud{display:flex;align-items:center;gap:1rem;background:linear-gradient(90deg,#101636,#0c1030);border:1px solid var(--line);border-radius:10px;padding:.6rem 1rem;margin:.8rem 0;flex-wrap:wrap}
+#hud .lvl{font-family:"Spectral",serif;font-weight:700;color:var(--gold2);font-size:1.02rem}
+#hud .xpbarw{flex:1;min-width:160px;height:10px;background:#070a1c;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+#hud .xpbar{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .4s}
+#hud .xpnum{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--soft)}
+#hud .badges{font-size:1rem;letter-spacing:.15em}
+
+/* ===== studio layout ===== */
+#studio{display:grid;grid-template-columns:64px 1fr 250px;gap:.7rem;margin:.6rem 0}
+@media(max-width:880px){#studio{grid-template-columns:56px 1fr}#quests{grid-column:1/3}}
+/* palette */
+#palette{display:flex;flex-direction:column;gap:.4rem;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:.5rem .35rem;align-items:center}
+.brush{width:46px;height:46px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:.12s;user-select:none}
+.brush:hover{border-color:var(--gold)}
+.brush.on{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.brush .ic{font-size:1.05rem;line-height:1}
+.brush .bl{font-family:"IBM Plex Mono",monospace;font-size:.44rem;letter-spacing:.02em;text-transform:uppercase}
+.brush.tool{margin-top:.2rem}
+.pal-sep{width:70%;border-top:1px solid var(--line);margin:.15rem 0}
+/* canvas */
+#canvwrap{position:relative;background:var(--navy2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+#canvas{display:block;width:100%;height:520px;cursor:crosshair;touch-action:none}
+#canvhint{position:absolute;left:10px;bottom:8px;font-family:"IBM Plex Mono",monospace;font-size:.62rem;color:var(--faint);pointer-events:none}
+/* node visuals */
+.nd{cursor:grab}
+.nd rect,.nd circle{transition:filter .2s}
+.nd.sketch .shape{stroke-dasharray:5 4;opacity:.75}
+.nd.named .shape{stroke-dasharray:none;opacity:1}
+.nd.verified .shape{filter:drop-shadow(0 0 7px rgba(91,184,154,.75))}
+.nd.sel .shape{stroke:#fff !important;stroke-width:2.5}
+.wirep{fill:none;stroke:#7fb0d4;stroke-width:1.6;opacity:.85}
+.wirep.sel{stroke:#fff}
+/* quests */
+#quests{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:.7rem .8rem;max-height:520px;overflow-y:auto}
+#quests h3{font-family:"IBM Plex Mono",monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:.1rem 0 .5rem}
+.q{border:1px solid var(--line);border-radius:8px;padding:.5rem .6rem;margin:.4rem 0;cursor:pointer;background:var(--panel);transition:.12s}
+.q:hover{border-color:var(--gold)}
+.q.act{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+.q.done{border-color:var(--grn)}
+.q .qt{font-family:"Spectral",serif;font-weight:600;font-size:.86rem;color:#eaeefb}
+.q.done .qt::after{content:" ✓";color:var(--grn)}
+.q .qd{font-size:.72rem;color:var(--faint);margin-top:.1rem;line-height:1.35}
+.q .qxp{font-family:"IBM Plex Mono",monospace;font-size:.58rem;color:var(--gold)}
+
+/* inspector + gate modal-ish cards */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:.8rem 0}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.85rem 1rem}
+.card .lab{font-family:"IBM Plex Mono",monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:.35rem}
+label.fld{display:block;font-size:.76rem;color:var(--soft);margin:.5rem 0 .15rem}
+input.txt,textarea.txt,select.txt{width:100%;background:#070a1c;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:.42rem .55rem;font-family:"IBM Plex Mono",monospace;font-size:.72rem;line-height:1.5}
+input.txt:focus,textarea.txt:focus{outline:none;border-color:var(--gold)}
+textarea.txt{min-height:46px;resize:vertical}
+.btnrow{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem}
+button.b{font-family:"IBM Plex Mono",monospace;font-size:.66rem;cursor:pointer;border-radius:6px;padding:.42rem .7rem;border:1px solid var(--line);background:var(--panel2);color:#dbe1f2}
+button.b:hover{border-color:var(--gold);color:#fff}
+button.b.go{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:500}
+button.b.ok{border-color:var(--grn);color:var(--grn)}
+button.b.warn{border-color:var(--ox);color:var(--ox)}
+.gap-note{font-size:.74rem;color:var(--ox);margin:.4rem 0 0;font-style:italic;min-height:1em}
+.chips{display:flex;flex-wrap:wrap;gap:.32rem;margin:.25rem 0}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:.62rem;border:1px solid var(--line);background:var(--panel2);color:#dbe1f2;border-radius:16px;padding:.22rem .55rem;cursor:pointer;user-select:none}
+.chip:hover{border-color:var(--gold)}
+.chip.on{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.lens-lab{font-family:"IBM Plex Mono",monospace;font-size:.56rem;letter-spacing:.08em;text-transform:uppercase;color:var(--peri);margin:.55rem 0 .15rem}
+
+#genPrompt{width:100%;min-height:190px;font-family:"IBM Plex Mono",monospace;font-size:.7rem;line-height:1.5;color:#dbe1f2;background:#070a1c;border:1px solid var(--line);border-radius:8px;padding:.7rem .8rem;resize:vertical}
+#genPrompt:focus{outline:none;border-color:var(--gold)}
+
+.tiers{display:flex;flex-direction:column;gap:.45rem;margin:.4rem 0}
+.tier{display:flex;gap:.55rem;padding:.5rem .65rem;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:.78rem;color:var(--soft)}
+.tier b{color:#eef1fb;font-family:"Spectral",serif}
+.tier .t-badge{font-family:"IBM Plex Mono",monospace;font-size:.52rem;letter-spacing:.06em;text-transform:uppercase;padding:.12rem .38rem;border-radius:3px;white-space:nowrap;height:fit-content;margin-top:.1rem}
+.tier.live .t-badge{background:var(--grn);color:#04140f}
+.tier .t-badge.soon{background:#2a3160;color:var(--peri)}
+
+ol.refs{font-size:.8rem;color:var(--soft);padding-left:1.3rem}
+ol.refs li{margin:.4rem 0}
+ol.refs b{color:#eef1fb}
+footer{max-width:var(--maxw);margin:2rem auto 0;padding:1.4rem 18px 3.5rem;border-top:1px solid var(--line);font-size:.8rem;color:var(--soft)}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:#060818;border:1px solid var(--line);color:#fff;font-family:"IBM Plex Mono",monospace;font-size:.72rem;padding:.55rem .95rem;border-radius:6px;opacity:0;transition:.24s;z-index:100;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.gold{border-color:var(--gold);color:var(--gold2)}
+::selection{background:rgba(212,168,67,.26);color:#fff}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <p class="eyebrow">Zistgah ecosystem · a habitat for humanity, for the AGI era</p>
+  <h1><span class="aab">AAB</span> — paint systems. AI builds them.
+    <span class="sub">Ascension for All and Beyond (آب, water — beside <a href="https://zistgah.org/zamin/">zamin</a>/earth &amp; fiza/air). A paint program for <b>systems, not just software</b>: you paint actors, components, stores, gates and flows; the AI and the verification-gated process implement them. Nothing glows "verified" without a named oracle — the game is grounded.</span>
+  </h1>
+  <p class="byline"><b>Abhishek Choudhary</b> · AyeAI · <a href="https://zistgah.org/">zistgah.org</a> · <a href="CONTRACT.md">contract</a> · <a href="BACKLOG.md">backlog</a></p>
+</header>
+
+<div class="wrap">
+
+<!-- ===== HUD ===== -->
+<div id="hud">
+  <span class="lvl" id="lvlName">Doodler</span>
+  <div class="xpbarw"><div class="xpbar" id="xpbar"></div></div>
+  <span class="xpnum" id="xpnum">0 XP</span>
+  <span class="badges" id="badges" title="stage badges"></span>
+</div>
+
+<!-- ===== STUDIO ===== -->
+<div id="studio">
+  <div id="palette" aria-label="Brushes"></div>
+  <div id="canvwrap">
+    <svg id="canvas" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"></svg>
+    <div id="canvhint">pick a brush · click canvas to paint · drag to move · Wire: click two nodes · double-click node to edit</div>
+  </div>
+  <div id="quests">
+    <h3>Quests — the gated path</h3>
+    <div id="qlist"></div>
+  </div>
+</div>
+
+<!-- ===== INSPECTOR + INTENT ===== -->
+<div class="grid2">
+  <div class="card" id="inspector">
+    <span class="lab">Inspector — selected element</span>
+    <div id="insEmpty" style="font-size:.8rem;color:var(--faint)">Nothing selected. Paint something, then click it (double-click also opens this).</div>
+    <div id="insBody" style="display:none">
+      <label class="fld">Name it (+10 XP — a sketch becomes real)</label>
+      <input class="txt" id="insName" placeholder="e.g. Triage rule engine">
+      <label class="fld">Note / responsibility</label>
+      <textarea class="txt" id="insNote" placeholder="what this element is responsible for"></textarea>
+      <label class="fld">Oracle that verified it (+25 XP — required to glow; the studio records, it does not run oracles)</label>
+      <input class="txt" id="insOracle" placeholder="e.g. parity vs second impl · test suite 42/42 · guideline check · review by X">
+      <div class="btnrow">
+        <button class="b ok" id="insVerify">Mark verified ◈</button>
+        <button class="b warn" id="insDelete">Erase</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <span class="lab">Intent ledger — kept verbatim for audit &amp; gap analysis</span>
+    <label class="fld">Original intent (what you actually want to exist)</label>
+    <textarea class="txt" id="intentOrig" placeholder="e.g. a time machine"></textarea>
+    <label class="fld">Current deliverable (what you're painting toward now)</label>
+    <textarea class="txt" id="intentNow" placeholder="e.g. a causal-loop simulator"></textarea>
+    <div class="gap-note" id="gapNote"></div>
+    <div class="lens-lab">Domain — industry lens <span style="color:var(--faint)">(ISIC domains)</span></div>
+    <div class="chips" id="lensIndustry"></div>
+    <div class="lens-lab">Occupation lens <span style="color:var(--faint)">(ISCO domains)</span></div>
+    <div class="chips" id="lensOccupation"></div>
+    <div class="lens-lab">Field-of-learning lens <span style="color:var(--faint)">(ISCED domains)</span></div>
+    <div class="chips" id="lensEducation"></div>
+  </div>
+</div>
+
+<!-- ===== PROMPT ===== -->
+<h2>Hand your painting to the AI</h2>
+<p style="font-size:.86rem;color:var(--soft)">The prompt below carries the context contract, your intent, your domain, the <b>active quest</b>, and a manifest of everything you painted — so the AI implements <em>your</em> system, at <em>this</em> stage, under the gate.</p>
+<textarea id="genPrompt" spellcheck="false" aria-label="Generated prompt"></textarea>
+<div class="btnrow">
+  <button class="b go" data-p="claude">Open in Claude ↗</button>
+  <button class="b go" data-p="chatgpt">Open in ChatGPT ↗</button>
+  <button class="b go" data-p="perplexity">Open in Perplexity ↗</button>
+  <button class="b" data-p="copy">⧉ Copy</button>
+  <span style="flex:1"></span>
+  <button class="b" data-p="export">⬇ Export painting (JSON)</button>
+  <button class="b" data-p="import">⬆ Import</button>
+  <button class="b warn" data-p="clear">Clear canvas</button>
+  <input type="file" id="importFile" accept="application/json" style="display:none">
+</div>
+
+<!-- ===== TIERS ===== -->
+<h2>Where you run it</h2>
+<div class="tiers">
+  <div class="tier live"><span class="t-badge">live now</span><div><b>Browser only.</b> This studio + any AI chat. Zero setup — the fallback that always works on any laptop.</div></div>
+  <div class="tier"><span class="t-badge soon">soon</span><div><b>Notebooks (Colab etc.).</b> One click from a painted component to a runnable notebook. <span style="color:var(--faint)">aab#1</span></div></div>
+  <div class="tier"><span class="t-badge soon">soon</span><div><b>Local Linux (Ubuntu first).</b> Full toolchain, your machine, your data. <span style="color:var(--faint)">aab#2</span></div></div>
+  <div class="tier"><span class="t-badge soon">soon</span><div><b>WSL.</b> A common Linux environment on Windows for teams. <span style="color:var(--faint)">aab#3</span></div></div>
+</div>
+
+<!-- ===== FROM PAINTING TO RECORD ===== -->
+<h2>From painting to permanent record</h2>
+<p style="font-size:.88rem;color:var(--soft)">The last two quests connect your painted system to the real publishing &amp; IP machinery developed in this ecosystem: one metadata record fans out to a permanent <b>DOI</b> + OpenTimestamps proof (<a href="https://pypi.org/project/misty-doi/">misty-doi</a>, <code style="font-family:'IBM Plex Mono',monospace;font-size:.78em">publish_paper.sh</code>), and inventions are tracked with <b>OTS disclosure as priority-date evidence</b> (<code style="font-family:'IBM Plex Mono',monospace;font-size:.78em">patent_track.sh</code>) — provenance is automated, but <b>every filing decision stays with you and qualified counsel</b>. Open where you can, patent where it counts: the gated open artifact compounds credibility; the tracked disclosure protects the core.</p>
+
+<!-- ===== REFERENCES ===== -->
+<h2>References — the toolchain behind this studio</h2>
+<ol class="refs">
+  <li><b>VGC</b> — Choudhary, A. <i>Verification-Gated Human–AI Co-Development: A Methodology and Cost Analysis.</i> Zenodo 2026. <a href="https://doi.org/10.5281/zenodo.21264248">doi:10.5281/zenodo.21264248</a>. The method every quest follows.</li>
+  <li><b>VGC-Health</b> — Choudhary, A. <i>A Verification-Gated Clinical Co-Development Manifold.</i> Zenodo 2026. <a href="https://doi.org/10.5281/zenodo.21303401">doi:10.5281/zenodo.21303401</a>. First domain replica; Fiza (environment) is next.</li>
+  <li><b>CHAKRA</b> — the VGC case study: a 74-file, six-language astronomical engine verified by a 6,590-check cross-representation parity harness.</li>
+  <li><b>misty-doi</b> — one canonical record in → Zenodo DOI, DataCite, CITATION.cff, codemeta, checksums, OpenTimestamps out. <a href="https://pypi.org/project/misty-doi/">PyPI</a> · <code>pipx install misty-doi</code>.</li>
+  <li><b>publish_paper.sh</b> — end-to-end publishing engine (init → validate → OTS → DOI → submission bundle → status ledger), in project-ilm/ops.</li>
+  <li><b>patent_track.sh</b> — patent provenance + state tracking: OpenTimestamps disclosure as priority-date evidence; prior-art, drafting, office actions as tracked states; filing stays human + counsel. In project-ilm/ops.</li>
+  <li><b>OpenTimestamps</b> — independent, blockchain-anchored proof of existence-by-date for every shipped artifact.</li>
+  <li><b>Zamin</b> — <a href="https://zistgah.org/zamin/">zistgah.org/zamin</a> — PRATIK ternary-silicon paper + WYSIWYG circuit simulator; the drag-and-wire ancestor of this canvas.</li>
+  <li><b>PRATIK core MVP</b> — <a href="https://zistgah.org/pratik_core_mvp/">zistgah.org/pratik_core_mvp</a> — the executable balanced-ternary kernel (C++/CUDA + JS 3D visualizer).</li>
+  <li><b>AyeEM Navigator</b> — parameterized embodiment painter that regenerates ten research artifacts live from a genome; the paint-to-artifacts ancestor.</li>
+  <li><b>Project ILM / Hindawi / Romenagri</b> — <a href="https://ilm.codes/">ilm.codes</a> — the multiscript-multilingual programming ecosystem (GPL 2003–04 onward), and the context-rebuild discipline (REBUILD.md) this studio's contract/context files follow.</li>
+  <li><b>AtlasViz</b> — GPL conversation-archive visualizer (stack/galaxy/constellation views) used to curate the build-transcript corpus.</li>
+</ol>
+
+</div>
+
+<footer>
+  <p><strong>© 1993–2026 Abhishek Choudhary. All rights reserved</strong>, except per category (<a href="LICENSES.md">LICENSES.md</a>): content CC-BY-SA-4.0 · software GPL-3.0-or-later · metadata CC0-1.0 · methods proprietary (patents reserved). Sole authorship. Built with an AI under the gate it teaches. Cite: <span>https://doi.org/10.5281/zenodo.21312745</span> · maintain contract and context.</p>
+</footer>
+<div id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+var CANON='https://zistgah.org/aab/', CONTRACT=CANON+'CONTRACT.md', PARENT='https://doi.org/10.5281/zenodo.21264248';
+
+/* ---------- store (localStorage w/ in-memory fallback) ---------- */
+var store=(function(){try{localStorage.setItem('__t','1');localStorage.removeItem('__t');
+ return {g:function(k){return localStorage.getItem(k);},s:function(k,v){try{localStorage.setItem(k,v);}catch(e){}}};}
+ catch(e){var m={};return {g:function(k){return k in m?m[k]:null;},s:function(k,v){m[k]=v;}};}})();
+var K='aab.v2.';
+var toastEl=document.getElementById('toast');
+function toast(m,gold){toastEl.textContent=m;toastEl.className=gold?'show gold':'show';clearTimeout(toastEl._t);toastEl._t=setTimeout(function(){toastEl.className='';},2100);}
+
+/* ---------- model ---------- */
+var M={nodes:[],wires:[],xp:0,stages:{},nextId:1};
+function save(){store.s(K+'model',JSON.stringify(M));}
+function load(){var v=store.g(K+'model');if(v){try{var o=JSON.parse(v);if(o&&o.nodes)M=o;}catch(e){}}}
+
+/* ---------- brushes ---------- */
+var BRUSHES=[
+ {id:'actor',ic:'👤',lab:'actor',shape:'circle',col:'#b9c6ea'},
+ {id:'comp',ic:'▣',lab:'compo',shape:'rect',col:'#d4a843'},
+ {id:'store',ic:'⛁',lab:'store',shape:'store',col:'#8fb0d4'},
+ {id:'gate',ic:'◈',lab:'gate',shape:'diamond',col:'#d1704a'},
+ {id:'iface',ic:'⇄',lab:'iface',shape:'rect2',col:'#5bb89a'},
+ {id:'env',ic:'☁',lab:'env',shape:'cloud',col:'#828cb2'}
+];
+var TOOLS=[{id:'select',ic:'✥',lab:'move'},{id:'wire',ic:'／',lab:'wire'},{id:'erase',ic:'✕',lab:'erase'}];
+var mode='comp';
+(function(){
+ var h=document.getElementById('palette'),html='';
+ BRUSHES.forEach(function(b){html+='<button class="brush" data-m="'+b.id+'" title="paint '+b.lab+'"><span class="ic">'+b.ic+'</span><span class="bl">'+b.lab+'</span></button>';});
+ html+='<div class="pal-sep"></div>';
+ TOOLS.forEach(function(t){html+='<button class="brush tool" data-m="'+t.id+'" title="'+t.lab+'"><span class="ic">'+t.ic+'</span><span class="bl">'+t.lab+'</span></button>';});
+ h.innerHTML=html;
+ h.addEventListener('click',function(e){var b=e.target.closest('.brush');if(!b)return;
+   mode=b.getAttribute('data-m');
+   h.querySelectorAll('.brush').forEach(function(x){x.classList.toggle('on',x===b);});
+   wireFrom=null;paintAll();});
+ h.querySelector('[data-m="comp"]').classList.add('on');
+})();
+
+/* ---------- quests (VGC stages, gated) ---------- */
+var QUESTS=[
+ {n:'0',t:'Requirements',xp:50,d:'Pin down what you are building and how each requirement will be CHECKED (its oracle). No design yet.',gate:'Name at least one oracle per major requirement.',
+  body:'STAGE 0 — REQUIREMENTS. From my painted system + intent, elicit crisp requirements, constraints, per-requirement ORACLES (how each is checked), and non-goals. Ask clarifying questions. No architecture/code yet.'},
+ {n:'1',t:'Architecture',xp:60,d:'Turn the painting into a named architecture: canonical source of truth, reference, independent verifier.',gate:'The painting has named components and at least one ◈ gate wired in.',
+  body:'STAGE 1 — ARCHITECTURE. Turn the painted manifest into an architecture: name the canonical source of truth, the reference, the independent verifier. Keep concerns orthogonal; map each painted element to a responsibility.'},
+ {n:'2',t:'Reference build',xp:80,d:'First working version, every claim grounded in a retrieved source — not memory.',gate:'Anything ungroundable is flagged Open — Honest Deferral.',
+  body:'STAGE 2 — REFERENCE BUILD. Implement the first version of the painted system. Ground every claim in retrieved current sources with citations; flag anything unverifiable as "Open — Honest Deferral"; state assumptions.'},
+ {n:'3',t:'Forge the gate',xp:100,d:'Build the check that must pass before anything is accepted: a second implementation, test suite, measurement, or review.',gate:'Each ◈ gate node names its oracle.',
+  body:'STAGE 3 — THE GATE. Build the verification gate(s) for the painted system: independent oracle(s) — second representation, test suite, measurement, or domain review. For each accepted item show the oracle that confirms it.'},
+ {n:'4',t:'Verify loop',xp:100,d:'Gate every change; repair only by exact anchor; never mark unverified work done.',gate:'Verified nodes glow only with a recorded oracle.',
+  body:'STAGE 4 — VERIFY LOOP. For each artifact apply the gate; on failure return the failing oracle output and patch by EXACT ANCHOR only. Keep a visible open/deferred list. Never mark unverified work as done.'},
+ {n:'5',t:'Reconcile',xp:60,d:'Re-adopt canonical state + latest sources; diff to zero; list every drift.',gate:'Painting matches the built system (drift list empty or explained).',
+  body:'STAGE 5 — RECONCILE. Reconcile the build against the canonical state and latest sources. Diff to zero; list every drift and its resolution. Update the painted manifest where reality moved.'},
+ {n:'6',t:'Package & licence',xp:60,d:'Licences per artifact; provenance; open where you can, protect where it counts.',gate:'Every artifact category has a licence decision.',
+  body:'STAGE 6 — PACKAGE & LICENCE. Package the deliverable. Recommend licences per artifact category (content/software/metadata/patentable methods); weigh open-science vs proprietary for THIS system; write NOTICE + provenance + citation.'},
+ {n:'7',t:'DOI · OTS · patent trail',xp:120,d:'One record → DOI + OpenTimestamps (misty-doi / publish_paper.sh); inventions tracked with OTS priority-date evidence (patent_track.sh). Filing stays human + counsel.',gate:'Dry-run first; irreversible steps typed-confirmed.',
+  body:'STAGE 7 — DOI + OTS + PATENT TRAIL. Prepare the citable record: misty.json metadata, OFFLINE dry-run, then the GATED mint + OpenTimestamps proof (per misty-doi / publish_paper.sh). For patentable elements, prepare a patent_track.sh-style provenance ledger: OTS-stamped disclosure as priority-date evidence, prior-art and claim-draft states tracked. Do NOT auto-file anything; filing is a human+counsel decision.'}
+];
+var activeQ=null;
+function qDone(i){return M.stages[i]==='done';}
+(function(){
+ var h=document.getElementById('qlist'),html='';
+ QUESTS.forEach(function(q,i){html+='<div class="q" data-i="'+i+'"><div class="qt">'+q.n+' · '+q.t+'</div><div class="qd">'+q.d+'</div><div class="qxp">gate: '+q.gate+' · +'+q.xp+' XP</div></div>';});
+ h.innerHTML=html;
+ h.addEventListener('click',function(e){var q=e.target.closest('.q');if(!q)return;
+   var i=+q.getAttribute('data-i');
+   if(activeQ===i && !qDone(i)){ // attempt completion: grounded — ask for evidence
+     var ev=prompt('Complete quest '+QUESTS[i].n+' · '+QUESTS[i].t+'?\n\nGate: '+QUESTS[i].gate+'\n\nType the evidence (what passed / where recorded). Empty = cancel.');
+     if(ev&&ev.trim()){M.stages[i]='done';M.stages['ev'+i]=ev.trim();addXP(QUESTS[i].xp);toast('Quest '+QUESTS[i].n+' complete ✓ +'+QUESTS[i].xp+' XP',true);}
+   } else { activeQ=i; store.s(K+'activeQ',String(i)); }
+   paintQuests();refresh();});
+})();
+function paintQuests(){
+ document.querySelectorAll('#qlist .q').forEach(function(el){
+  var i=+el.getAttribute('data-i');
+  el.classList.toggle('act',activeQ===i);
+  el.classList.toggle('done',qDone(i));});
+ var b='';QUESTS.forEach(function(q,i){b+=qDone(i)?'◆':'◇';});
+ document.getElementById('badges').textContent=b;
+}
+
+/* ---------- XP / levels ---------- */
+var LEVELS=[[0,'Doodler'],[100,'Apprentice'],[250,'Journeyman'],[450,'Systems Painter'],[700,'Gate Keeper'],[1000,'Master Builder'],[1400,'Grand Architect']];
+function addXP(n){M.xp+=n;save();paintHUD();}
+function paintHUD(){
+ var lvl=LEVELS[0],next=null;
+ for(var i=0;i<LEVELS.length;i++){if(M.xp>=LEVELS[i][0])lvl=LEVELS[i];else{next=LEVELS[i];break;}}
+ document.getElementById('lvlName').textContent=lvl[1];
+ document.getElementById('xpnum').textContent=M.xp+' XP'+(next?' · '+(next[0]-M.xp)+' to '+next[1]:' · MAX');
+ var pct=next?100*(M.xp-lvl[0])/(next[0]-lvl[0]):100;
+ document.getElementById('xpbar').style.width=Math.max(3,Math.min(100,pct))+'%';
+}
+
+/* ---------- canvas ---------- */
+var svg=document.getElementById('canvas'), NS='http://www.w3.org/2000/svg';
+var selId=null, wireFrom=null, drag=null;
+function vb(){var r=svg.getBoundingClientRect();svg.setAttribute('viewBox','0 0 '+r.width+' '+r.height);return r;}
+window.addEventListener('resize',function(){vb();paintAll();});
+function pt(e){var r=svg.getBoundingClientRect();var t=(e.touches&&e.touches[0])||e;return {x:t.clientX-r.left,y:t.clientY-r.top};}
+function nodeById(id){for(var i=0;i<M.nodes.length;i++)if(M.nodes[i].id===id)return M.nodes[i];return null;}
+function shapeSVG(n,b){
+ var c=b.col,s='';
+ if(b.shape==='circle')s='<circle class="shape" cx="0" cy="0" r="20" fill="#141a3a" stroke="'+c+'" stroke-width="1.6"/>';
+ else if(b.shape==='diamond')s='<rect class="shape" x="-16" y="-16" width="32" height="32" transform="rotate(45)" fill="#241826" stroke="'+c+'" stroke-width="1.6"/>';
+ else if(b.shape==='store')s='<rect class="shape" x="-22" y="-14" width="44" height="28" rx="12" fill="#141a3a" stroke="'+c+'" stroke-width="1.6"/>';
+ else if(b.shape==='cloud')s='<ellipse class="shape" cx="0" cy="0" rx="26" ry="16" fill="#10162e" stroke="'+c+'" stroke-width="1.4" stroke-dasharray="2 3"/>';
+ else if(b.shape==='rect2')s='<rect class="shape" x="-24" y="-13" width="48" height="26" rx="4" fill="#141a3a" stroke="'+c+'" stroke-width="1.6"/>';
+ else s='<rect class="shape" x="-22" y="-16" width="44" height="32" rx="6" fill="#141a3a" stroke="'+c+'" stroke-width="1.6"/>';
+ return s;
+}
+function paintAll(){
+ var r=vb(),html='';
+ // wires
+ M.wires.forEach(function(w,wi){var a=nodeById(w[0]),b=nodeById(w[1]);if(!a||!b)return;
+  var mx=(a.x+b.x)/2, my=(a.y+b.y)/2-18;
+  html+='<path class="wirep" data-w="'+wi+'" d="M'+a.x+','+a.y+' Q'+mx+','+my+' '+b.x+','+b.y+'"/>';});
+ // nodes
+ M.nodes.forEach(function(n){var b=BRUSHES.filter(function(x){return x.id===n.type;})[0]||BRUSHES[1];
+  var cls='nd '+(n.oracle?'verified':(n.name?'named':'sketch'))+(selId===n.id?' sel':'')+(wireFrom===n.id?' sel':'');
+  html+='<g class="'+cls+'" data-id="'+n.id+'" transform="translate('+n.x+','+n.y+')">'
+   +shapeSVG(n,b)
+   +'<text y="4" text-anchor="middle" font-size="13" style="pointer-events:none">'+b.ic+'</text>'
+   +'<text y="34" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="'+(n.oracle?'#5bb89a':'#aeb8d8')+'" style="pointer-events:none">'+(n.name?esc(n.name.slice(0,18)):'(unnamed)')+'</text>'
+   +(n.oracle?'<text y="-26" text-anchor="middle" font-size="9" fill="#5bb89a" style="pointer-events:none">◈ verified</text>':'')
+   +'</g>';});
+ svg.innerHTML=html;
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+
+svg.addEventListener('pointerdown',function(e){
+ var g=e.target.closest('.nd');
+ if(g){var id=+g.getAttribute('data-id'),n=nodeById(id);
+  if(mode==='erase'){M.nodes=M.nodes.filter(function(x){return x.id!==id;});M.wires=M.wires.filter(function(w){return w[0]!==id&&w[1]!==id;});if(selId===id)selId=null;save();paintAll();showIns();toast('erased');return;}
+  if(mode==='wire'){
+   if(wireFrom===null){wireFrom=id;toast('wire from "'+(n.name||'unnamed')+'" — click target');}
+   else if(wireFrom!==id){M.wires.push([wireFrom,id]);addXP(3);wireFrom=null;toast('flow painted +3 XP');}
+   else wireFrom=null;
+   save();paintAll();return;}
+  selId=id;showIns();drag={id:id,dx:pt(e).x-n.x,dy:pt(e).y-n.y};paintAll();return;}
+ var w=e.target.closest('.wirep');
+ if(w&&mode==='erase'){M.wires.splice(+w.getAttribute('data-w'),1);save();paintAll();return;}
+ // empty canvas: stamp brush
+ var isBrush=BRUSHES.some(function(b){return b.id===mode;});
+ if(isBrush){var p=pt(e);M.nodes.push({id:M.nextId++,type:mode,x:p.x,y:p.y,name:'',note:'',oracle:''});addXP(5);save();paintAll();toast('painted +5 XP');}
+ else {selId=null;wireFrom=null;showIns();paintAll();}
+});
+svg.addEventListener('pointermove',function(e){if(!drag)return;var n=nodeById(drag.id);if(!n)return;var p=pt(e);n.x=p.x-drag.dx;n.y=p.y-drag.dy;paintAll();});
+window.addEventListener('pointerup',function(){if(drag){save();drag=null;}});
+svg.addEventListener('dblclick',function(e){var g=e.target.closest('.nd');if(g){selId=+g.getAttribute('data-id');showIns();document.getElementById('insName').focus();}});
+
+/* ---------- inspector ---------- */
+function showIns(){
+ var n=selId!==null?nodeById(selId):null;
+ document.getElementById('insEmpty').style.display=n?'none':'block';
+ document.getElementById('insBody').style.display=n?'block':'none';
+ if(n){document.getElementById('insName').value=n.name;document.getElementById('insNote').value=n.note;document.getElementById('insOracle').value=n.oracle;}
+}
+document.getElementById('insName').addEventListener('input',function(){var n=nodeById(selId);if(!n)return;var had=!!n.name;n.name=this.value;if(!had&&n.name)addXP(10);save();paintAll();refresh();});
+document.getElementById('insNote').addEventListener('input',function(){var n=nodeById(selId);if(n){n.note=this.value;save();refresh();}});
+document.getElementById('insVerify').addEventListener('click',function(){
+ var n=nodeById(selId);if(!n)return;
+ var o=document.getElementById('insOracle').value.trim();
+ if(!o){toast('grounding: name the oracle first — no oracle, no glow');return;}
+ var had=!!n.oracle;n.oracle=o;if(!had)addXP(25);save();paintAll();refresh();toast('◈ verified — oracle on record'+(had?'':' +25 XP'),true);});
+document.getElementById('insDelete').addEventListener('click',function(){
+ if(selId===null)return;M.nodes=M.nodes.filter(function(x){return x.id!==selId;});M.wires=M.wires.filter(function(w){return w[0]!==selId&&w[1]!==selId;});selId=null;save();paintAll();showIns();});
+
+/* ---------- lenses + intent ---------- */
+var LENS={industry:['Agriculture · forestry · fishing','Mining','Manufacturing','Energy','Water · waste','Construction','Trade','Transport','Accommodation · food','Information · communication','Finance · insurance','Real estate','Professional · scientific · technical','Administrative','Public administration','Education','Health · social work','Arts · recreation','Other services'],
+ occupation:['Managers','Professionals','Technicians','Clerical support','Services · sales','Skilled agricultural','Craft · trades','Machine operators','Elementary occupations','Armed forces'],
+ education:['Generic','Education','Arts · humanities','Social sciences · media','Business · law','Natural sciences · maths','ICT','Engineering · manufacturing','Agriculture · veterinary','Health · welfare','Services']};
+var pick={industry:null,occupation:null,education:null};
+function mkLens(host,key){var h=document.getElementById(host);
+ h.innerHTML=LENS[key].map(function(v,i){return '<span class="chip" data-i="'+i+'">'+v+'</span>';}).join('');
+ h.addEventListener('click',function(e){var c=e.target.closest('.chip');if(!c)return;
+  var on=c.classList.contains('on');h.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on');});
+  if(!on){c.classList.add('on');pick[key]=LENS[key][+c.getAttribute('data-i')];store.s(K+'lens.'+key,pick[key]);}else{pick[key]=null;store.s(K+'lens.'+key,'');}
+  refresh();});}
+mkLens('lensIndustry','industry');mkLens('lensOccupation','occupation');mkLens('lensEducation','education');
+function gap(){var o=(document.getElementById('intentOrig').value||'').trim(),n=(document.getElementById('intentNow').value||'').trim(),el=document.getElementById('gapNote');
+ if(o&&n&&o!==n)el.textContent='Gap on record: set out for "'+(o.length>48?o.slice(0,46)+'…':o)+'" — painting "'+(n.length>48?n.slice(0,46)+'…':n)+'".';
+ else if(o&&!n)el.textContent='Intent recorded. Add the current deliverable to track the gap.';
+ else el.textContent='';}
+['intentOrig','intentNow'].forEach(function(id){var el=document.getElementById(id);
+ el.addEventListener('input',function(){store.s(K+id,el.value);gap();refresh();});});
+
+/* ---------- manifest + prompt ---------- */
+function manifest(){
+ var TN={actor:'Actor',comp:'Component',store:'Data store',gate:'Gate/Oracle',iface:'Interface',env:'Environment'};
+ var lines=M.nodes.map(function(n){
+  return '- ['+(TN[n.type]||n.type)+'] '+(n.name||'(unnamed)')+(n.note?' — '+n.note:'')+(n.oracle?' [VERIFIED by: '+n.oracle+']':' [sketch]');});
+ var flows=M.wires.map(function(w){var a=nodeById(w[0]),b=nodeById(w[1]);return (a&&b)?('- '+(a.name||'(unnamed '+a.type+')')+' -> '+(b.name||'(unnamed '+b.type+')')):null;}).filter(Boolean);
+ var done=QUESTS.map(function(q,i){return qDone(i)?q.n+':'+q.t+(M.stages['ev'+i]?' [evidence: '+M.stages['ev'+i]+']':''):null;}).filter(Boolean);
+ return 'ELEMENTS ('+M.nodes.length+'):\n'+(lines.join('\n')||'(canvas empty)')
+  +'\n\nFLOWS ('+flows.length+'):\n'+(flows.join('\n')||'(none)')
+  +'\n\nQUESTS COMPLETE: '+(done.join(' · ')||'(none yet)');}
+function ctxHeader(){
+ var d=[];if(pick.industry)d.push('industry: '+pick.industry);if(pick.occupation)d.push('occupation: '+pick.occupation);if(pick.education)d.push('field: '+pick.education);
+ return ['== CONTEXT CONTRACT (read before answering) ==',
+ 'This comes from AAB — a paint program for AI-Human co-development of SYSTEMS (not just software) under the Verification-Gated (VGC) method. Ground yourself:',
+ '  • Studio: '+CANON+'   • Contract: '+CONTRACT,
+ '  • Parent method (the gate, parity oracle, primitives): '+PARENT,
+ 'Acceptance belongs to an ORACLE, never to you or the human. No oracle -> Honest Deferral, never a silent accept. Verified marks below were recorded by the human with a named oracle; treat unverified elements as sketches. Be rigorous; do not flatter.',
+ '','== DOMAIN ==',(d.join(' · ')||'(not chosen)')].join('\n');}
+function buildPrompt(){
+ var orig=(document.getElementById('intentOrig').value||'').trim(),now=(document.getElementById('intentNow').value||'').trim();
+ var q=activeQ!==null?QUESTS[activeQ]:null;
+ return ctxHeader()
+  +'\n\n== ORIGINAL INTENT (preserve verbatim for continuity/gap analysis) ==\n'+(orig||'(not stated)')
+  +(now?'\n== CURRENT DELIVERABLE ==\n'+now:'')
+  +'\n\n== THE PAINTED SYSTEM (manifest) ==\n'+manifest()
+  +'\n\n== ACTIVE QUEST ==\n'+(q?q.body:'(pick a quest — stage 0 if starting)')
+  +'\n\n== MY SPECIFICS ==\n(add details, or paste the previous stage\'s output)';}
+function refresh(){document.getElementById('genPrompt').value=buildPrompt();}
+
+/* ---------- actions ---------- */
+var providers={claude:function(p){return 'https://claude.ai/new?q='+encodeURIComponent(p);},
+ chatgpt:function(p){return 'https://chatgpt.com/?q='+encodeURIComponent(p);},
+ perplexity:function(p){return 'https://www.perplexity.ai/search?q='+encodeURIComponent(p);}};
+document.querySelectorAll('.btnrow')[1].addEventListener('click',function(e){
+ var b=e.target.closest('button');if(!b)return;var w=b.getAttribute('data-p');
+ if(w==='copy'){navigator.clipboard.writeText(document.getElementById('genPrompt').value).then(function(){toast('prompt copied');},function(){toast('copy failed');});}
+ else if(w==='export'){
+  var data={tool:'AAB',version:'0.2.0',exported:new Date().toISOString(),
+   intent:{original:document.getElementById('intentOrig').value,current:document.getElementById('intentNow').value},
+   domain:pick,model:M};
+  var a=document.createElement('a');a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(data,null,2));
+  a.download='aab-painting.json';document.body.appendChild(a);a.click();a.remove();toast('painting exported (with intent, for audit)');}
+ else if(w==='import'){document.getElementById('importFile').click();}
+ else if(w==='clear'){if(confirm('Clear the canvas? (intent + XP kept; export first for the audit trail)')){M.nodes=[];M.wires=[];selId=null;save();paintAll();showIns();refresh();}}
+ else if(providers[w]){window.open(providers[w](document.getElementById('genPrompt').value),'_blank','noopener');toast('opening '+w+'…');}});
+document.getElementById('importFile').addEventListener('change',function(){
+ var f=this.files[0];if(!f)return;var r=new FileReader();
+ r.onload=function(){try{var d=JSON.parse(r.result);
+   if(d.model&&d.model.nodes){M=d.model;
+    if(d.intent){document.getElementById('intentOrig').value=d.intent.original||'';document.getElementById('intentNow').value=d.intent.current||'';
+     store.s(K+'intentOrig',d.intent.original||'');store.s(K+'intentNow',d.intent.current||'');}
+    save();paintAll();paintHUD();paintQuests();gap();refresh();toast('painting imported',true);}
+   else toast('not an AAB painting');}catch(e){toast('import failed: bad JSON');}};
+ r.readAsText(f);this.value='';});
+
+/* ---------- restore ---------- */
+load();
+['intentOrig','intentNow'].forEach(function(id){var v=store.g(K+id);if(v)document.getElementById(id).value=v;});
+Object.keys(LENS).forEach(function(key){var v=store.g(K+'lens.'+key);if(v){pick[key]=v;
+ document.querySelectorAll('#lens'+key.charAt(0).toUpperCase()+key.slice(1)+' .chip').forEach(function(c){if(c.textContent===v)c.classList.add('on');});}});
+var aq=store.g(K+'activeQ');if(aq!==null&&aq!=='')activeQ=parseInt(aq,10);
+vb();paintAll();paintHUD();paintQuests();gap();showIns();refresh();
+})();
+</script>
+</body>
+</html>

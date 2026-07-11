@@ -1,0 +1,33 @@
+{
+  "upload_type": "software",
+  "title": "AAB — the AI · Human Co-Development Studio",
+  "version": "0.2.0",
+  "language": "eng",
+  "creators": [
+    {
+      "name": "Choudhary, Abhishek",
+      "affiliation": "AyeAI, Hyderabad, India",
+      "orcid": "0009-0002-0684-8320"
+    }
+  ],
+  "description": "AAB (Ascension for All and Beyond) is a browser-first studio for AI-Human co-development of systems (not just software) under the Verification-Gated Human-AI Co-Development (VGC) method. A paint program for systems: the human paints actors, components, stores, gates and flows on a canvas; the AI and the gated process implement them. Gamification is grounded — elements glow verified only when a named oracle is recorded, and quests (the VGC stages) complete only with typed evidence. The painting serializes into every AI prompt as a manifest. AAB records the user's original intent for continuity/audit/gap-analysis, scopes work across the domains described by the ISIC/ISCO/ISCED classifications (the domains, not the standards), and offers an execution-tier ladder from browser to notebooks to local Linux to WSL. Part of the Zistgah ecosystem. Sprint 1a (v0.2).",
+  "keywords": [
+    "human-AI collaboration",
+    "verification-gated development",
+    "co-development",
+    "systems engineering",
+    "intent provenance",
+    "VGC",
+    "Zistgah"
+  ],
+  "license": "cc-by-sa-4.0",
+  "access_right": "open",
+  "notes": "Copyright (c) 1993-2026 Abhishek Choudhary. All rights reserved except per category: content CC-BY-SA-4.0; software GPL-3.0-or-later; metadata CC0-1.0; methods proprietary (patents reserved). Sole authorship. Provenance via Misty DOI + OpenTimestamps.",
+  "related_identifiers": [
+    {
+      "relation": "isDerivedFrom",
+      "identifier": "10.5281/zenodo.21264248",
+      "scheme": "doi"
+    }
+  ]
+}
