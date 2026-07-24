@@ -1,0 +1,14 @@
+{
+  "_copyright": "© 1993–2026 Abhishek Choudhary. All rights reserved.",
+  "title": "AAB — paint systems, AI builds them",
+  "short": "AAB",
+  "text": "AAB (Ascension for All and Beyond) — a paint program for systems. You paint actors, components, stores, gates and flows on a canvas; the AI and the verification-gated process (VGC) implement them. Grounded gamification: nothing glows verified without a named oracle.",
+  "bg": "#0a0e27",
+  "fg": "#d4a843",
+  "hashKey": "s",
+  "sw": "sw.js",
+  "whatsapp": true,
+  "card": true,
+  "stamp": true,
+  "installHint": true
+}
